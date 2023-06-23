@@ -81,7 +81,7 @@ def checkDevice(path):
                 - 2 no read permission given
         """
 
-        vprint(3, "Check if %s does exist and can be read" % path)
+        vprint(3, f"Check if {path} does exist and can be read")
         if not os.access(path, os.F_OK):
                 return (1, "UNKNOWN: no such device found")
         elif not os.access(path, os.R_OK):
@@ -101,11 +101,11 @@ def checkSmartMonTools(path):
                 - 2 cannot execute file
         """
 
-        vprint(3, "Check if %s does exist and can be read" % path)
+        vprint(3, f"Check if {path} does exist and can be read")
         if not os.access(path, os.F_OK):
-                return (1, "UNKNOWN: cannot find %s" % path)
+                return 1, f"UNKNOWN: cannot find {path}"
         elif not os.access(path, os.X_OK):
-                return (2, "UNKNOWN: cannot execute %s" % path)
+                return 2, f"UNKNOWN: cannot execute {path}"
         else:
                 return (0, "")
         # fi
@@ -114,32 +114,27 @@ def checkSmartMonTools(path):
 
 def callSmartMonTools(path, device, raid, ignoreDetails):
         # get health status
-        cmd = "%s -H %s %s" % (path, raid, device)
-        vprint(3, "Get device health status: %s" % cmd)
+        cmd = f"{path} -H {raid} {device}"
+        vprint(3, f"Get device health status: {cmd}")
         # filter out deprecation warnings
         warnings.filterwarnings('ignore', category=DeprecationWarning, message=r'os\.popen3')
         (child_stdin, child_stdout, child_stderr) = os.popen3(cmd)
         line = child_stderr.readline()
         if len(line):
-                return (3, "UNKNOWN: call exits unexpectedly (%s)" % line, "",
-                                "")
+                return 3, f"UNKNOWN: call exits unexpectedly ({line})", "", ""
         healthStatusOutput = ""
         for line in child_stdout:
                 healthStatusOutput = healthStatusOutput + line
-        # done
-
-	# If temperature is not needed, just return
-	if ignoreDetails == True:
-		return (0, "", healthStatusOutput, "")
+        if ignoreDetails == True:
+        	return (0, "", healthStatusOutput, "")
 
         # get temperature
-        cmd = "%s -A %s %s" % (path, raid, device)
-        vprint(3, "Get device temperature: %s" % cmd)
+        cmd = f"{path} -A {raid} {device}"
+        vprint(3, f"Get device temperature: {cmd}")
         (child_stdin, child_stdout, child_stderr) = os.popen3(cmd)
         line = child_stderr.readline()
         if len(line):
-                return (3, "UNKNOWN: call exits unexpectedly (%s)" % line, "",
-                                "")
+                return 3, f"UNKNOWN: call exits unexpectedly ({line})", "", ""
 
         temperatureOutput = ""
         for line in child_stdout:
@@ -209,7 +204,7 @@ def createReturnInfo(healthStatus, temperature, warningThreshold,
         """Create return information according to given thresholds."""
 
         # this is absolutely critical!
-        if healthStatus != "PASSED" and healthStatus != "OK" :
+        if healthStatus not in ["PASSED", "OK"]:
                 return (2, "CRITICAL: device does not pass health status")
         # fi
 
@@ -250,14 +245,14 @@ if __name__ == "__main__":
 
         vprint(2, "Get device name")
         device = options.device
-        vprint(1, "Device: %s" % device)
+        vprint(1, f"Device: {device}")
 
         vprint(2, "Get raid type and disk")
         raid = options.raid
-        vprint(1, "Raid: %s" % raid)
+        vprint(1, f"Raid: {raid}")
 
         if raid != "":
-                raid = "--device=" + raid
+                raid = f"--device={raid}"
         # fi
 
         # check if we can access 'path'
@@ -272,7 +267,7 @@ if __name__ == "__main__":
         if value != 0:
                 exitWithMessage(3, message)
         # fi
-        vprint(1, "Path to smartctl: %s" % _smartctlPath)
+        vprint(1, f"Path to smartctl: {_smartctlPath}")
 
         # call smartctl and parse output
         vprint(2, "Call smartctl")
